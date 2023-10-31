@@ -12,14 +12,13 @@ float vout_check = 0.0;
 const int num_read_vout_check = 5;  // количество усреднений для средних арифм.
 int min_charge_lavel = 49;  //минимальный уровень заряда 47
 int max_charge_lavel = 53;  //максимальный  
+int engine_start = 0;  //кол-во запусков
 
 void setup() {
   pinMode(A0,OUTPUT);  // реле зпуска
   pinMode(3,INPUT);    // статус работы генератора
   pinMode(A1,INPUT);   // напряжение на батареи
-int engine_start = 0;  //кол-во запусков
   pinMode(A2,OUTPUT);  // индикация ошибка
-
   Serial.begin(9600);
   Serial.setTimeout(50);
   Serial.println("status_gen,charge_level,error_run,engine_start,engine_stop");
@@ -32,13 +31,13 @@ void loop() {
     tmr = millis();
     vout =  (analogRead(A1) * Vref) / 1024.0;
     float sum = 0.0;                      
-    for (int i = 0; i < num_read_vout_check; i++)  // согласно количеству усреднений
+    for (int i = 0; i < num_read_vout_check; i++){  // согласно количеству усреднений
        sum += (analogRead(A1) * Vref) / 1024.0;                
-       delay(1000);  
+       delay(1000);
+    } 
     vout_check = sum /num_read_vout_check;
-
     if ((vout-vout_check)>-0.5 and (vout-vout_check) < 0.5  ){    
-          charge_level = vout / (R2/(R1+R2));
+          charge_level = vout / (R2/(R1+R2));         
     }      
     else {
       Serial.print( vout / (R2/(R1+R2)));Serial.println(' ');
@@ -47,9 +46,11 @@ void loop() {
       Serial.print(vout);Serial.println(' ');  
       Serial.print("Неверное значение");Serial.print(' ');
       charge_level=0;// обнуляем
+      return; 
     }           
     if (charge_level<0.01) {
       charge_level=0;// обнуляем нежелательное значение
+       return;  
     }
     if (error_run==true){
        digitalWrite(A2, HIGH);
